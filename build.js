@@ -2,61 +2,117 @@ const sharp = require('sharp');
 const fs = require('fs');
 
 const SIZE = 512;
-const INK = '#24292F';       // 统一深灰（品牌/功能图标）
+const TILE_SIZE = 416;
+const TILE_OFFSET = (SIZE - TILE_SIZE) / 2;
+const TILE_RADIUS = 104;
 
 const OUT_DIR = './icons/';
 
 const logos = [
-  ['ChatGPT.png', 'src/openai.svg'],
-  ['GitHub.png',  'src/github.svg'],
-  ['X.png',       'src/x.svg'],
-  ['Reddit.png',  'src/reddit.svg'],
-  ['Telegram.png','src/telegram.svg'],
-  ['YouTube.png', 'src/youtube.svg'],
-  ['Global.png',  'src/fa-globe.svg'],
-  ['Final.png',   'src/fa-shield-halved.svg'],
+  { out: 'ChatGPT.png', src: 'src/openai.svg',            from: '#19B68D', to: '#087A60', scale: 0.64 },
+  { out: 'GitHub.png',  src: 'src/github.svg',            from: '#30363D', to: '#0D1117', scale: 0.66 },
+  { out: 'X.png',       src: 'src/x.svg',                 from: '#303030', to: '#050505', scale: 0.58 },
+  { out: 'Reddit.png',  src: 'src/reddit.svg',            from: '#FF6A36', to: '#FF4500', scale: 0.68 },
+  { out: 'Telegram.png',src: 'src/telegram.svg',          from: '#39B3EA', to: '#168AC0', scale: 0.68 },
+  { out: 'YouTube.png', src: 'src/youtube.svg',           from: '#FF3B3B', to: '#E60000', scale: 0.68 },
+  { out: 'Global.png',  src: 'src/fa-globe.svg',          from: '#5B7CFA', to: '#3154C9', scale: 0.62 },
+  { out: 'Final.png',   src: 'src/fa-shield-halved.svg',  from: '#8B6CF7', to: '#5B3FBF', scale: 0.62 },
 ];
 const flags = [
-  ['HK.png', 'src/hk.svg'],
-  ['TW.png', 'src/tw.svg'],
-  ['JP.png', 'src/jp.svg'],
-  ['KR.png', 'src/kr.svg'],
-  ['SG.png', 'src/sg.svg'],
-  ['US.png', 'src/us.svg'],
+  { out: 'HK.png', src: 'src/hk.svg', position: 'centre' },
+  { out: 'TW.png', src: 'src/tw.svg', position: 'left' },
+  { out: 'JP.png', src: 'src/jp.svg', position: 'centre' },
+  { out: 'KR.png', src: 'src/kr.svg', position: 'centre' },
+  { out: 'SG.png', src: 'src/sg.svg', position: 'left' },
+  { out: 'US.png', src: 'src/us.svg', position: 'left' },
 ];
 
-function recolor(svg, color) {
-  let s = svg.replace(/fill="[^"]*"/g, '');
-  s = s.replace(/<path /g, `<path fill="${color}" `);
-  return s;
+function monochrome(svg, color) {
+  const withoutFill = svg.replace(/\sfill="[^"]*"/g, '');
+  return withoutFill.replace(/<svg\b/, `<svg fill="${color}"`);
 }
 
-async function make(out, src, kind) {
-  const raw = fs.readFileSync(src, 'utf8');
-  const svg = Buffer.from(kind === 'logo' ? recolor(raw, INK) : raw);
+function tileSvg(from, to, stroke, strokeOpacity) {
+  return Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${from}"/>
+          <stop offset="1" stop-color="${to}"/>
+        </linearGradient>
+      </defs>
+      <rect x="${TILE_OFFSET}" y="${TILE_OFFSET}" width="${TILE_SIZE}" height="${TILE_SIZE}"
+        rx="${TILE_RADIUS}" fill="url(#tile)"/>
+      <rect x="${TILE_OFFSET + 3}" y="${TILE_OFFSET + 3}" width="${TILE_SIZE - 6}" height="${TILE_SIZE - 6}"
+        rx="${TILE_RADIUS - 3}" fill="none" stroke="${stroke}" stroke-opacity="${strokeOpacity}" stroke-width="6"/>
+    </svg>
+  `);
+}
 
-  let targetW, targetH;
-  if (kind === 'logo') {
-    targetW = targetH = Math.round(SIZE * 0.72);   // 单色 logo 占画布 72%
-  } else {
-    targetW = Math.round(SIZE * 0.96);             // 4:3 国旗铺满宽度的 96%
-    targetH = Math.round(targetW * 3 / 4);
-  }
+function roundedMask() {
+  return Buffer.from(`
+    <svg width="${TILE_SIZE}" height="${TILE_SIZE}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${TILE_SIZE}" height="${TILE_SIZE}" rx="${TILE_RADIUS}" fill="#fff"/>
+    </svg>
+  `);
+}
 
-  const logo = await sharp(svg, { density: 600 }).resize(targetW, targetH).png().toBuffer();
+async function makeShadow() {
+  const svg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${TILE_OFFSET + 6}" y="${TILE_OFFSET + 12}" width="${TILE_SIZE - 12}" height="${TILE_SIZE - 12}"
+        rx="${TILE_RADIUS - 6}" fill="#0F172A" fill-opacity="0.2"/>
+    </svg>
+  `);
+  return sharp(svg).blur(12).png().toBuffer();
+}
 
-  // 透明画布，内容居中，无白底卡片
+async function makeLogo(icon, shadow) {
+  const raw = fs.readFileSync(icon.src, 'utf8');
+  const logoSize = Math.round(TILE_SIZE * icon.scale);
+  const logo = await sharp(Buffer.from(monochrome(raw, '#FFFFFF')), { density: 600 })
+    .resize(logoSize, logoSize, { fit: 'contain' })
+    .png()
+    .toBuffer();
+
   await sharp({
     create: { width: SIZE, height: SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
-    .composite([{ input: logo, gravity: 'center' }])
+    .composite([
+      { input: shadow },
+      { input: tileSvg(icon.from, icon.to, '#FFFFFF', 0.18) },
+      { input: logo, gravity: 'center' },
+    ])
     .png()
-    .toFile(OUT_DIR + out);
-  console.log('made', out);
+    .toFile(OUT_DIR + icon.out);
+  console.log('made', icon.out);
+}
+
+async function makeFlag(icon, shadow) {
+  const raw = fs.readFileSync(icon.src);
+  const flag = await sharp(raw, { density: 600 })
+    .resize(TILE_SIZE, TILE_SIZE, { fit: 'cover', position: icon.position })
+    .composite([{ input: roundedMask(), blend: 'dest-in' }])
+    .png()
+    .toBuffer();
+
+  await sharp({
+    create: { width: SIZE, height: SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
+    .composite([
+      { input: shadow },
+      { input: flag, gravity: 'center' },
+      { input: tileSvg('transparent', 'transparent', '#0F172A', 0.16) },
+    ])
+    .png()
+    .toFile(OUT_DIR + icon.out);
+  console.log('made', icon.out);
 }
 
 (async () => {
-  for (const [out, src] of logos) await make(out, src, 'logo');
-  for (const [out, src] of flags) await make(out, src, 'flag');
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  const shadow = await makeShadow();
+  for (const icon of logos) await makeLogo(icon, shadow);
+  for (const icon of flags) await makeFlag(icon, shadow);
   console.log('ALL DONE');
 })().catch(e => { console.error(e); process.exit(1); });
