@@ -2,28 +2,27 @@ const sharp = require('sharp');
 const fs = require('fs');
 
 const SIZE = 512;
-const RADIUS = 116;          // iOS 风格圆角
 const INK = '#24292F';       // 统一深灰（品牌/功能图标）
 
-const OUT_DIR = '/Users/liuzhihang/Library/Mobile Documents/iCloud~com~ruikq~decar/Documents/loon-icons/icons/';
+const OUT_DIR = './icons/';
 
 const logos = [
-  ['ChatGPT.png', 'openai.svg'],
-  ['GitHub.png',  'github.svg'],
-  ['X.png',       'x.svg'],
-  ['Reddit.png',  'reddit.svg'],
-  ['Telegram.png','telegram.svg'],
-  ['YouTube.png', 'youtube.svg'],
-  ['Global.png',  'fa-globe.svg'],
-  ['Final.png',   'fa-shield-halved.svg'],
+  ['ChatGPT.png', 'src/openai.svg'],
+  ['GitHub.png',  'src/github.svg'],
+  ['X.png',       'src/x.svg'],
+  ['Reddit.png',  'src/reddit.svg'],
+  ['Telegram.png','src/telegram.svg'],
+  ['YouTube.png', 'src/youtube.svg'],
+  ['Global.png',  'src/fa-globe.svg'],
+  ['Final.png',   'src/fa-shield-halved.svg'],
 ];
 const flags = [
-  ['HK.png', 'hk.svg'],
-  ['TW.png', 'tw.svg'],
-  ['JP.png', 'jp.svg'],
-  ['KR.png', 'kr.svg'],
-  ['SG.png', 'sg.svg'],
-  ['US.png', 'us.svg'],
+  ['HK.png', 'src/hk.svg'],
+  ['TW.png', 'src/tw.svg'],
+  ['JP.png', 'src/jp.svg'],
+  ['KR.png', 'src/kr.svg'],
+  ['SG.png', 'src/sg.svg'],
+  ['US.png', 'src/us.svg'],
 ];
 
 function recolor(svg, color) {
@@ -38,22 +37,19 @@ async function make(out, src, kind) {
 
   let targetW, targetH;
   if (kind === 'logo') {
-    targetW = targetH = Math.round(SIZE * 0.56);
+    targetW = targetH = Math.round(SIZE * 0.72);   // 单色 logo 占画布 72%
   } else {
-    targetW = Math.round(SIZE * 0.88);   // 4:3 国旗，卡片内居中留白
+    targetW = Math.round(SIZE * 0.96);             // 4:3 国旗铺满宽度的 96%
     targetH = Math.round(targetW * 3 / 4);
   }
 
   const logo = await sharp(svg, { density: 600 }).resize(targetW, targetH).png().toBuffer();
-  const mask = Buffer.from(
-    `<svg width="${SIZE}" height="${SIZE}"><rect width="${SIZE}" height="${SIZE}" rx="${RADIUS}" fill="#fff"/></svg>`
-  );
 
-  await sharp({ create: { width: SIZE, height: SIZE, channels: 4, background: '#FFFFFF' } })
-    .composite([
-      { input: logo, gravity: 'center' },
-      { input: mask, blend: 'dest-in' },
-    ])
+  // 透明画布，内容居中，无白底卡片
+  await sharp({
+    create: { width: SIZE, height: SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
+    .composite([{ input: logo, gravity: 'center' }])
     .png()
     .toFile(OUT_DIR + out);
   console.log('made', out);
