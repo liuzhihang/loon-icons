@@ -9,7 +9,7 @@ const TILE_RADIUS = 104;
 const OUT_DIR = './icons/';
 
 const logos = [
-  { out: 'ChatGPT.png', src: 'src/openai.svg',            from: '#19B68D', to: '#087A60', scale: 0.64 },
+  { out: 'ChatGPT.png', src: 'src/openai.svg',            from: '#FFFFFF', to: '#F2F3F5', ink: '#0D0D0D', stroke: '#0F172A', strokeOpacity: 0.12, scale: 0.64 },
   { out: 'GitHub.png',  src: 'src/github.svg',            from: '#30363D', to: '#0D1117', scale: 0.66 },
   { out: 'X.png',       src: 'src/x.svg',                 from: '#303030', to: '#050505', scale: 0.58 },
   { out: 'Reddit.png',  src: 'src/reddit.svg',            from: '#FF6A36', to: '#FF4500', scale: 0.68 },
@@ -70,8 +70,11 @@ async function makeShadow() {
 async function makeLogo(icon, shadow) {
   const raw = fs.readFileSync(icon.src, 'utf8');
   const logoSize = Math.round(TILE_SIZE * icon.scale);
-  const logo = await sharp(Buffer.from(monochrome(raw, '#FFFFFF')), { density: 600 })
-    .resize(logoSize, logoSize, { fit: 'contain' })
+  const logo = await sharp(Buffer.from(monochrome(raw, icon.ink || '#FFFFFF')), { density: 600 })
+    .resize(logoSize, logoSize, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
     .png()
     .toBuffer();
 
@@ -80,7 +83,7 @@ async function makeLogo(icon, shadow) {
   })
     .composite([
       { input: shadow },
-      { input: tileSvg(icon.from, icon.to, '#FFFFFF', 0.18) },
+      { input: tileSvg(icon.from, icon.to, icon.stroke || '#FFFFFF', icon.strokeOpacity ?? 0.18) },
       { input: logo, gravity: 'center' },
     ])
     .png()

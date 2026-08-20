@@ -25,7 +25,7 @@ loon-icons/
 ## 设计规范（品牌色徽章）
 
 - **版式**：512×512 透明背景，内容居中
-- **品牌图标**：品牌色圆角方块 + 白色官方字形，在浅色/深色主题下均保持清晰对比
+- **品牌图标**：ChatGPT 使用官方黑色 Monoblossom + 白色圆角方块；其他品牌使用品牌色圆角方块 + 白色字形
 - **功能图标**：蓝色 Global、紫色 Final，与品牌图标使用相同的圆角方块和光影
 - **国旗**：原色方形裁切 + 圆角描边；台湾、新加坡、美国旗帜采用左侧焦点，避免裁掉关键图案
 - **小尺寸优先**：主体占画布约 81%，针对 Loon 列表中的 32–44 px 显示尺寸优化
@@ -49,7 +49,7 @@ GitHub raw 有 CDN 缓存，替换图片后最长约 5 分钟生效；Loon 内�
 
 ### 换风格（改色 / 改尺寸）
 
-编辑 `build.js` 顶部的 `TILE_SIZE`、`TILE_RADIUS`，或 `logos` 映射中的渐变色与 `scale`，重新生成。
+编辑 `build.js` 顶部的 `TILE_SIZE`、`TILE_RADIUS`，或 `logos` 映射中的渐变色、`ink` 与 `scale`，重新生成。
 
 ## 推荐图标素材源
 
@@ -64,7 +64,8 @@ GitHub raw 有 CDN 缓存，替换图片后最长约 5 分钟生效；Loon 内�
 
 ## 当前素材来源
 
-- 品牌：simple-icons（openai→AI、github、x、reddit、telegram、youtube）
+- ChatGPT：OpenAI Developers 官方 `OpenAI-black-monoblossom.svg`
+- 其他品牌：simple-icons（github、x、reddit、telegram、youtube）
 - 功能：FontAwesome Free（globe→Global、shield-halved→Final）
 - 国旗：flag-icons 4:3（hk/tw/jp/kr/sg/us）
 
