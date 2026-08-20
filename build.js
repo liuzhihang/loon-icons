@@ -2,9 +2,9 @@ const sharp = require('sharp');
 const fs = require('fs');
 
 const SIZE = 512;
-const TILE_SIZE = 416;
+const TILE_SIZE = 464;
 const TILE_OFFSET = (SIZE - TILE_SIZE) / 2;
-const TILE_RADIUS = 104;
+const TILE_RADIUS = 116;
 
 const OUT_DIR = './icons/';
 
@@ -60,11 +60,11 @@ function roundedMask() {
 async function makeShadow() {
   const svg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${TILE_OFFSET + 6}" y="${TILE_OFFSET + 12}" width="${TILE_SIZE - 12}" height="${TILE_SIZE - 12}"
-        rx="${TILE_RADIUS - 6}" fill="#0F172A" fill-opacity="0.2"/>
+      <rect x="${TILE_OFFSET + 6}" y="${TILE_OFFSET + 8}" width="${TILE_SIZE - 12}" height="${TILE_SIZE - 12}"
+        rx="${TILE_RADIUS - 6}" fill="#0F172A" fill-opacity="0.18"/>
     </svg>
   `);
-  return sharp(svg).blur(12).png().toBuffer();
+  return sharp(svg).blur(8).png().toBuffer();
 }
 
 async function makeLogo(icon, shadow) {
